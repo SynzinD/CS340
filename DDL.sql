@@ -12,9 +12,8 @@ DROP TABLE IF EXISTS seating_objects;
 DROP TABLE IF EXISTS event_registrations;
 
 /*
-Create and load test data into the individuals entity
+Create the individuals table
 */
-
 
 CREATE TABLE individuals (
   `individualID` INT AUTO_INCREMENT NOT NULL,
@@ -22,7 +21,11 @@ CREATE TABLE individuals (
   `lastName` VARCHAR(45) NOT NULL,
   `email` VARCHAR(45) NULL,
   PRIMARY KEY (`individualID`));
-  
+
+/*
+Insert test data into the individuals table 
+*/
+
 INSERT INTO individuals
 (`firstName`, `lastName`, `email`)
 VALUES 
@@ -33,7 +36,7 @@ VALUES
 ( NULL, 'Wretchrot', 'baby@babybaby.org');
 
 /*
-Create and load test data into the venues entity
+Create the table for the venues entity
 */
 
 CREATE TABLE venues (
@@ -42,7 +45,11 @@ CREATE TABLE venues (
   `location` VARCHAR(200),
   `capacity` INT NULL,
   PRIMARY KEY (`venueID`));
-  
+
+/*
+Enter test data into the venues table
+*/
+
   INSERT INTO venues
   (`venueName`, `location`, `capacity`)
   VALUES
@@ -53,7 +60,7 @@ CREATE TABLE venues (
   ('Pricy Downtown Hotel', '5522 12th St, KC, MO 64106', 3100);
   
 /*
-Create and load test data into the events entity
+Create the table for the events entity
 */
 
 CREATE TABLE events (
@@ -67,7 +74,11 @@ CREATE TABLE events (
   PRIMARY KEY (`eventID`),  
   CONSTRAINT `fk_events_venues1`
     FOREIGN KEY (`venueID`) REFERENCES `venues` (`venueID`) ON DELETE CASCADE);
-    
+
+/*
+Insert data into the events table
+*/
+
 INSERT INTO events 
 (`eventName`, `eventDateTime`, `venueID`, `seatingType`, `description`, `eventCapacity`)
 VALUES
@@ -78,7 +89,7 @@ VALUES
 ('Board Meeting', '2025-07-05', (SELECT venueID from venues WHERE venueName = 'South Branch KCK Public Library Reading Room'), 'committee', 'Whole Board meeting', 9);
 
 /*
-Create and load test data into the seating_objects entity
+Create a table for the seating_objects entity
 */
 
 CREATE TABLE seating_objects (
@@ -89,6 +100,10 @@ CREATE TABLE seating_objects (
   PRIMARY KEY (`seating_objectID`),
   CONSTRAINT `fk_seating_objects_events1`
     FOREIGN KEY (`eventID`) REFERENCES `events` (`eventID`) ON DELETE CASCADE);
+
+/*
+Populate the seating_objects table with sample data
+*/
 
 INSERT INTO seating_objects
 (`eventID`, `objectName`, `objectCapacity`)
@@ -104,7 +119,7 @@ VALUES
 ((SELECT eventID FROM events WHERE eventName = 'Saturday Support Group'), 'Group1', 15);
 
 /*
-Create and load test data into the event_registrations entity
+Create a table for the event_registrations entity
 */
 
 CREATE TABLE event_registrations (
@@ -121,7 +136,12 @@ CREATE TABLE event_registrations (
     FOREIGN KEY (`eventID`) REFERENCES `events` (`eventID`) ON DELETE CASCADE,
   CONSTRAINT `fk_event_registrations_seating_objects1`
     FOREIGN KEY (`seating_objectID`) REFERENCES `seating_objects` (`seating_objectID`) ON DELETE CASCADE);
-    
+
+
+/*
+Populate the event_registrations table with sample data
+*/
+
 INSERT INTO event_registrations
 (`individualID`, `eventID`, `seating_objectID`, `objectSeat`)
 VALUES
