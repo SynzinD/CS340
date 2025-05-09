@@ -11,6 +11,10 @@ DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS seating_objects;
 DROP TABLE IF EXISTS event_registrations;
 
+/*
+Create and load test data into the individuals entity
+*/
+
 
 CREATE TABLE individuals (
   `individualID` INT AUTO_INCREMENT NOT NULL,
@@ -28,7 +32,9 @@ VALUES
 ( 'Chirp', 'Featherfowl', 'cousin@greenhunter.net'),
 ( NULL, 'Wretchrot', 'baby@babybaby.org');
 
-
+/*
+Create and load test data into the venues entity
+*/
 
 CREATE TABLE venues (
   `venueID` INT AUTO_INCREMENT NOT NULL,
@@ -46,7 +52,9 @@ CREATE TABLE venues (
   ('South Branch KCK Public Library Reading Room', '321 Strong Ave Kansas City, KS', 25),
   ('Pricy Downtown Hotel', '5522 12th St, KC, MO 64106', 3100);
   
-
+/*
+Create and load test data into the events entity
+*/
 
 CREATE TABLE events (
   `eventID` INT AUTO_INCREMENT NOT NULL,
@@ -58,8 +66,7 @@ CREATE TABLE events (
   `eventCapacity` INT,
   PRIMARY KEY (`eventID`),  
   CONSTRAINT `fk_events_venues1`
-    FOREIGN KEY (`venueID`)
-    REFERENCES `venues` (`venueID`));
+    FOREIGN KEY (`venueID`) REFERENCES `venues` (`venueID`) ON DELETE CASCADE);
     
 INSERT INTO events 
 (`eventName`, `eventDateTime`, `venueID`, `seatingType`, `description`, `eventCapacity`)
@@ -69,8 +76,10 @@ VALUES
 ('Wednesday AM Support Group', (SELECT CAST(CONCAT((SELECT CURDATE() + INTERVAL (7 - DAYOFWEEK(CURDATE()) + 5) DAY), ' 09:00:00') AS DATETIME)), (SELECT venueID from venues WHERE venueName = 'Recurring Zoom Meeting 2'), 'GA', 'Recurring Wedneday 9 a.m.', 15),
 ('Saturday Support Group', (SELECT CAST(CONCAT((SELECT CURDATE() + INTERVAL (7 - DAYOFWEEK(CURDATE()) + 5) DAY), ' 11:00:00') AS DATETIME)), (SELECT venueID from venues WHERE venueName = 'Joe Amayo Community Center'), 'GA', 'Recurring in-person Saturday support group', 15),
 ('Board Meeting', '2025-07-05', (SELECT venueID from venues WHERE venueName = 'South Branch KCK Public Library Reading Room'), 'committee', 'Whole Board meeting', 9);
-;
 
+/*
+Create and load test data into the seating_objects entity
+*/
 
 CREATE TABLE seating_objects (
   `seating_objectID` INT AUTO_INCREMENT NOT NULL,
@@ -79,8 +88,7 @@ CREATE TABLE seating_objects (
   `objectCapacity` INT,
   PRIMARY KEY (`seating_objectID`),
   CONSTRAINT `fk_seating_objects_events1`
-    FOREIGN KEY (`eventID`)
-    REFERENCES `events` (`eventID`));
+    FOREIGN KEY (`eventID`) REFERENCES `events` (`eventID`) ON DELETE CASCADE);
 
 INSERT INTO seating_objects
 (`eventID`, `objectName`, `objectCapacity`)
@@ -95,7 +103,9 @@ VALUES
 ((SELECT eventID FROM events WHERE eventName = 'Thursday PM Support Group'), 'Group2', 15),
 ((SELECT eventID FROM events WHERE eventName = 'Saturday Support Group'), 'Group1', 15);
 
-
+/*
+Create and load test data into the event_registrations entity
+*/
 
 CREATE TABLE event_registrations (
   `registrationID` INT AUTO_INCREMENT NOT NULL,
@@ -106,14 +116,11 @@ CREATE TABLE event_registrations (
   PRIMARY KEY (`registrationID`),
   CONSTRAINT `unique_registration` UNIQUE (`individualID`, `eventID`, `seating_objectID`), 
   CONSTRAINT `fk_individuals_has_events_individuals`
-    FOREIGN KEY (`individualID`)
-    REFERENCES `individuals` (`individualID`),
+    FOREIGN KEY (`individualID`) REFERENCES `individuals` (`individualID`) ON DELETE CASCADE,
   CONSTRAINT `fk_individuals_has_events_events1`
-    FOREIGN KEY (`eventID`)
-    REFERENCES `events` (`eventID`),
+    FOREIGN KEY (`eventID`) REFERENCES `events` (`eventID`) ON DELETE CASCADE,
   CONSTRAINT `fk_event_registrations_seating_objects1`
-    FOREIGN KEY (`seating_objectID`)
-    REFERENCES `seating_objects` (`seating_objectID`));
+    FOREIGN KEY (`seating_objectID`) REFERENCES `seating_objects` (`seating_objectID`) ON DELETE CASCADE);
     
 INSERT INTO event_registrations
 (`individualID`, `eventID`, `seating_objectID`, `objectSeat`)
@@ -149,5 +156,4 @@ VALUES
 (	(SELECT individualID from individuals WHERE firstName is NULL AND lastName = 'Wretchrot'),
 	(SELECT eventID from events WHERE eventName = 'Wednesday AM Support Group'),
 	(SELECT seating_objectID from seating_objects WHERE eventID = (select eventID from events WHERE eventName = 'Wednesday AM Support Group') and objectName = 'Group1'),
-    3)
-;
+    3);
