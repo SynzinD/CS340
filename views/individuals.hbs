@@ -1,0 +1,36 @@
+<h2>View Individual Attendees</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Individual ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each individuals}}
+        <tr>
+            <td>{{this.individualID}}</td>
+            <td>{{this.firstName}}</td>
+            <td>{{this.lastName}}</td>
+            <td>{{this.email}}</td>
+            <td><a href="/individuals/edit/{{this.individualID}}">Edit</a></td>
+            <td><button onclick="deleteIndividual({{this.individualID}})">Delete</button></td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+<h3>Add New Individual</h3>
+<form action="/individuals" method="POST">
+    <label for="firstName">First Name:</label><br>
+    <input type="text" id="firstName" name="firstName"><br><br>
+    <label for="lastName">Last Name:</label><br>
+    <input type="text" id="lastName" name="lastName" required><br><br>
+    <label for="email">Email:</label><br>
+    <input type="email" id="email" name="email"><br><br>
+    <input type="submit" value="Add Individual">
+</form>

@@ -1,0 +1,55 @@
+<h2>View Events</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Event ID</th>
+            <th>Event Name</th>
+            <th>Date/Time</th>
+            <th>Venue ID</th>
+            <th>Seating Type</th>
+            <th>Description</th>
+            <th>Capacity</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each events}}
+        <tr>          
+            <td>{{this.eventID}}</td>
+            <td>{{this.eventName}}</td>
+            <td>{{this.eventDateTime}}</td>
+            <td>{{this.venueID}}</td>
+            <td>{{this.seatingType}}</td>
+            <td>{{this.description}}</td>
+            <td>{{this.eventCapacity}}</td>
+            <td><a href="/events/edit/{{this.eventID}}">Edit</a></td>
+            <td><button onclick="deleteEvent({{this.eventID}})">Delete</button></td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+<h3>Add New Event</h3>
+    <form action="/events" method="POST">
+        <label for="eventName">Event Name:</label><br>
+        <input type="text" id="eventName" name="eventName" required><br><br>
+
+        <label for="eventDateTime">Date and Time:</label><br>
+        <input type="datetime-local" id="eventDateTime" name="eventDateTime"><br><br>
+
+        <label for="venueID">Venue:</label><br>
+        <select id="venueID" name="venueID">
+            <option value="">Select Venue by Name (to be added)</option>
+        </select><br><br>
+
+        <label for="seatingType">Seating Type:</label><br>
+        <input type="text" id="seatingType" name="seatingType"><br><br>
+
+        <label for="description">Description:</label><br>
+        <textarea id="description" name="description"></textarea><br><br>
+
+        <label for="eventCapacity">Event Capacity:</label><br>
+        <input type="number" id="eventCapacity" name="eventCapacity"><br><br>
+
+        <input type="submit" value="Add Event">
+</form>

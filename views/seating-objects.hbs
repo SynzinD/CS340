@@ -1,0 +1,40 @@
+<h2>View Seating Objects</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Seating Object ID</th>
+            <th>Event ID</th>
+            <th>Object Name</th>
+            <th>Object Capacity</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each seatingobjects}}
+        <tr>          
+            <td>{{this.seating_objectID}}</td>
+            <td>{{this.eventID}}</td>
+            <td>{{this.objectName}}</td>
+            <td>{{this.objectCapacity}}</td>
+            <td><a href="/events/edit/{{this.seating_objectID}}">Edit</a></td>
+            <td><button onclick="deleteEvent({{this.seating_objectID}})">Delete</button></td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+<h3>Add New Seating Object</h3>
+<form action="/seating-objects" method="POST">
+        <label for="eventID">Event:</label><br>
+        <select id="eventID" name="eventID">
+            <option value="">Select Event by Name (to be added)</option>
+        </select><br><br>
+
+        <label for="objectName">Object Name:</label><br>
+        <input type="text" id="objectName" name="objectName" required><br><br>
+
+        <label for="objectCapacity">Object Capacity:</label><br>
+        <input type="number" id="objectCapacity" name="objectCapacity"><br><br>
+
+        <input type="submit" value="Add Seating Object">
+</form>

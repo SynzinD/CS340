@@ -1,0 +1,39 @@
+<h2>View Event Venues</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Venue ID</th>
+            <th>Venue Name</th>
+            <th>Location</th>
+            <th>Capacity</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each venues}}
+        <tr>
+            <td>{{this.venueID}}</td>
+            <td>{{this.venueName}}</td>
+            <td>{{this.location}}</td>
+            <td>{{this.capacity}}</td>
+            <td><a href="/venues/edit/{{this.venueID}}">Edit</a></td>
+            <td><button onclick="deleteVenue({{this.venueID}})">Delete</button></td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+ <h3>Add New Venue</h3>
+    <form action="/venues" method="POST">
+        <label for="venueName">Venue Name:</label><br>
+        <input type="text" id="venueName" name="venueName" required><br><br>
+
+        <label for="location">Location:</label><br>
+        <input type="text" id="location" name="location"><br><br>
+
+        <label for="capacity">Capacity:</label><br>
+        <input type="number" id="capacity" name="capacity"><br><br>
+
+        <input type="submit" value="Add Venue">
+</form>

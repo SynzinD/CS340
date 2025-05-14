@@ -1,0 +1,49 @@
+<h2>View Registrations</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Registration ID</th>
+            <th>Event Name</th>
+            <th>Individual Name</th>
+            <th>Seating Object Name</th>
+            <th>Seat Number</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each registrations}}
+        <tr>
+            <td>{{this.registrationID}}</td>
+            <td>{{this.eventName}}</td>
+            <td>{{this.individualName}}</td>
+            <td>{{this.seatingObjectName}}</td>
+            <td>{{this.objectSeat}}</td>
+            <td><a href="/registrations/edit/{{this.registrationID}}">Edit</a></td>
+            <td><button onclick="deleteRegistration({{this.registrationID}})">Delete</button></td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
+<h3>Add New Registration</h3>
+    <form action="/registrations" method="POST">
+        <label for="individualID">Individual:</label><br>
+        <select id="individualID" name="individualID">
+            <option value="">Select Individual by Name (to be added)</option>
+        </select><br><br>
+
+        <label for="eventID">Event:</label><br>
+        <select id="eventID" name="eventID">
+            <option value="">Select Event by Name (to be added)</option>
+        </select><br><br>
+
+        <label for="seating_objectID">Seating Object:</label><br>
+        <select id="seating_objectID" name="seating_objectID">
+            <option value="">Select Seating Object by Name (to be added)</option>
+        </select><br><br>
+
+        <label for="objectSeat">Seat Number:</label><br>
+        <input type="number" id="objectSeat" name="objectSeat"><br><br>
+
+        <input type="submit" value="Add Registration">
+</form>

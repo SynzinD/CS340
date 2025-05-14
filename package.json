@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.3",
+    "forever": "^4.0.3",
+    "mysql2": "^3.14.1",
+    "nodemon": "^3.1.10"
+  },
+  "name": "project_step3",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "development": "npx nodemon app.js",
+    "production": "npx forever start app.js",
+    "stop_production": "npx forever stop app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

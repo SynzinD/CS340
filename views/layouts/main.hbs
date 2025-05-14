@@ -1,0 +1,101 @@
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        nav {
+            background-color: #f0f0f0;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: inline-block; /* To center the list */
+        }
+
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            color: #777;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Group 47 Megan Mooers and Synzin Darkpaw</h1>
+        <h1>Nonprofit Event Management System</h1>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="/individuals">Individual Attendees</a></li>
+            <li><a href="/venues">Venues</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/seating-objects">Event Seating</a></li>
+            <li><a href="/registrations">Registrations</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        {{{body}}}
+    </div>
+
+    <footer>
+        <p></p>
+    </footer>
+</body>
+</html>
