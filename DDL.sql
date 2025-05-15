@@ -1,5 +1,5 @@
 /*
-CS340 Group 47 Project Step 2 Draft
+CS340 Group 47 Project Step 3 Draft
 Megan Mooers and Synzin Darkpaw 
 */
 
