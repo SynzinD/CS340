@@ -31,6 +31,7 @@ app.get('/', async function (req, res) {
     res.render('index', {
         title: 'Event Management System',
         links: [
+            { url: '/', title: 'Home' },
             { url: '/individuals', title: 'Individual Attendees' },
             { url: '/venues', title: 'Venues' },
             { url: '/events', title: 'Events' },
