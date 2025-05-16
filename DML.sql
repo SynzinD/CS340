@@ -52,15 +52,33 @@ WHERE venueID = (SELECT venueID FROM venues WHERE eventName = @vNameSelect);
 DELETE FROM venues WHERE venueID = (SELECT venueID FROM venues WHERE eventName = @vNameSelect);
 
 /*
-Events CRUD
+Events CRUD - Used on /events
 */
 -- insert into events where venueName is pulled from a picklist and must be subqueried to get the ID
 INSERT INTO events 
 (`eventName`, `eventDateTime`, `venueID`, `seatingType`, `description`, `eventCapacity`)
 VALUES
 (@eNameInsert, @eDateTimeInsert, (SELECT venueID from venues WHERE venueName = @vNameInsert), @eSeatingTypeInsert, @eDescriptionInsert, @eCapacityInsert);
+
 -- generic pull all for table fill, may be changed to convert venueID into name
 SELECT * FROM events;
+
+-- Used to swap out the VenueID for the VenueName in the display table. 
+SELECT
+                e.eventID,
+                e.eventName,
+                e.eventDateTime,
+                v.venueName,
+                e.seatingType,
+                e.description,
+                e.eventCapacity,
+                e.venueID /* Keep for edit functionality */
+            FROM events e
+            JOIN venues v ON e.venueID = v.venueID
+
+-- populate the picklist for venues on the Events page
+SELECT venueID, venueName FROM venues
+	
 -- Search for events based on the name. 
 SELECT * FROM events WHERE eventName LIKE @eNameSearch;
 -- Update events where the name of the event vs the eventID is supplied, and where the venueName vs the venueID is supplied
@@ -80,8 +98,22 @@ INSERT INTO seating_objects
 VALUES
 ((SELECT eventID FROM events WHERE eventName = @eNameSelect), @oNameInsert, @oCapacityInsert);
 
--- Pull all values from seating_object to populate unformatted list. 
+-- Pull all values from seating_object to populate unforma--tted list. 
 SELECT * FROM seating_objects;
+
+-- Populate the table with more user friendly data, displaying eventName, instead of the FK. 
+SELECT
+                so.seating_objectID,
+                e.eventName,
+                so.objectName,
+                so.objectCapacity,
+                so.eventID /* Keep for edit functionality */
+            FROM seating_objects so
+            JOIN events e ON so.eventID = e.eventID
+
+-- Used to Populate Events Picklist in Add Seating Object form
+SELECT eventID, eventName FROM events
+	
 -- Get a list of all the seating objects that are named the same thing over all events - possible search function
 SELECT * FROM seating_objects WHERE objectName LIKE @oNameSearch;
 -- Get a list of all the seating objects at a given event
@@ -131,6 +163,16 @@ FROM event_registrations r
 JOIN events e ON r.eventID = e.eventID
 JOIN individuals i ON r.individualID = i.individualID
 JOIN seating_objects s ON r.seating_objectID = s.seating_objectID
+
+-- Used to populate the individual picklist on the add registration form
+SELECT individualID, firstName, lastName FROM individuals
+
+-- Used to populate the event picklist on the add registration form
+SELECT eventID, eventName FROM events
+
+-- Usesd to populate the seating object picklist on the add registration form
+SELECT seating_objectID, objectName FROM seating_objects
+	
 -- Bring up an event_registration based on a supplied first and last name, for possible search functionality
 SELECT * FROM event_registrations WHERE (SELECT individualID from individuals WHERE firstName = @fNameSearch AND lastName = @lNameSearch);
 -- Bring up all event registrations for a given event
