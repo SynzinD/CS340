@@ -1,3 +1,18 @@
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
+<!-- 
+    Citation for the <script> block below
+    Date: 5/19/25
+    Adapted from AI:
+    Source URL: https://gemini.google.com/app
+    Code here was adapted from the code in individuals.hbs, which was partially generated from Gemini
+    Using the prompts described there. 
+    ADDITIONALLY:
+    Gemini was asked to quickly sketch out placeholder functions to demonstrate implementation of "form" aspect.
+    This code will be replaced in the final version!! 
+-->
+
 <h2>View Registrations</h2>
 <table>
     <thead>
@@ -11,39 +26,155 @@
             <th>Delete</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="registrationsTableBody">
         {{#each registrations}}
-        <tr>
+        <tr data-id="{{this.registrationID}}">
             <td>{{this.registrationID}}</td>
-            <td>{{this.eventName}}</td>
-            <td>{{this.individualName}}</td>
-            <td>{{this.seatingObjectName}}</td>
-            <td>{{this.objectSeat}}</td>
-            <td><a href="/registrations/edit/{{this.registrationID}}">Edit</a></td>
-            <td><button onclick="deleteRegistration({{this.registrationID}})">Delete</button></td>
+            <td data-field="eventName" data-event-id="{{this.eventID}}">{{this.eventName}}</td>
+            <td data-field="individualName" data-individual-id="{{this.individualID}}">{{this.individualName}}</td>
+            <td data-field="seatingObjectName" data-seating-object-id="{{this.seating_objectID}}">{{this.seatingObjectName}}</td>
+            <td data-field="objectSeat">{{this.objectSeat}}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, {{this.registrationID}})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, {{this.registrationID}})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, {{this.registrationID}})">Cancel</button>
+            </td>
+            <td>
+                <button onclick="deleteRegistration({{this.registrationID}})">Delete</button>
+            </td>
         </tr>
         {{/each}}
     </tbody>
 </table>
+
 <h3>Add New Registration</h3>
-    <form action="/registrations" method="POST">
-        <label for="individualID">Individual:</label><br>
-        <select id="individualID" name="individualID">
-            <option value="">Select Individual by Name (to be added)</option>
-        </select><br><br>
+<form action="/registrations" method="POST">
+    <label for="individualID">Individual:</label><br>
+    <select id="individualID" name="individualID">
+        <option value="">Select an Individual</option>
+        {{#each individuals}}
+        <option value="{{this.individualID}}">{{this.firstName}} {{this.lastName}}</option>
+        {{/each}}
+    </select><br><br>
 
-        <label for="eventID">Event:</label><br>
-        <select id="eventID" name="eventID">
-            <option value="">Select Event by Name (to be added)</option>
-        </select><br><br>
+    <label for="eventID">Event:</label><br>
+    <select id="eventID" name="eventID" onchange="loadSeatingObjects(this.value)">
+        <option value="">Select an Event</option>
+        {{#each events}}
+        <option value="{{this.eventID}}">{{this.eventName}}</option>
+        {{/each}}
+    </select><br><br>
 
-        <label for="seating_objectID">Seating Object:</label><br>
-        <select id="seating_objectID" name="seating_objectID">
-            <option value="">Select Seating Object by Name (to be added)</option>
-        </select><br><br>
+    <label for="seating_objectID">Seating Object:</label><br>
+    <select id="seating_objectID" name="seating_objectID">
+        <option value="">Select an Event First</option>
+    </select><br><br>
 
-        <label for="objectSeat">Seat Number:</label><br>
-        <input type="number" id="objectSeat" name="objectSeat"><br><br>
+    <label for="objectSeat">Seat Number:</label><br>
+    <input type="number" id="objectSeat" name="objectSeat" min="1"><br><br>
 
-        <input type="submit" value="Add Registration">
+    <input type="submit" value="Add Registration">
 </form>
+
+
+<script>
+    async function loadSeatingObjects(eventID) {
+        const seatingObjectDropdown = document.getElementById('seating_objectID');
+        seatingObjectDropdown.innerHTML = '<option value="">Loading Seating Objects...</option>';
+
+        if (eventID) {
+            try {
+                const response = await fetch(`/api/events/${eventID}/seating-objects`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const seatingObjects = await response.json();
+
+                seatingObjectDropdown.innerHTML = '<option value="">Select a Seating Object</option>';
+                seatingObjects.forEach(so => {
+                    const option = document.createElement('option');
+                    option.value = so.seating_objectID;
+                    option.textContent = so.objectName;
+                    seatingObjectDropdown.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Could not fetch seating objects:", error);
+                seatingObjectDropdown.innerHTML = '<option value="">Error loading Seating Objects</option>';
+            }
+        } else {
+            seatingObjectDropdown.innerHTML = '<option value="">Select an Event First</option>';
+        }
+    }
+</script>
+
+<script>
+    let originalRowContent = {}; // Stores original HTML for cancellation
+
+    function editRow(button, registrationID) {
+        const row = button.closest('tr');
+        originalRowContent[registrationID] = row.innerHTML; // Store original HTML
+
+        // Get cells by their data-field attribute
+        const eventNameCell = row.querySelector('[data-field="eventName"]');
+        const individualNameCell = row.querySelector('[data-field="individualName"]');
+        const seatingObjectNameCell = row.querySelector('[data-field="seatingObjectName"]');
+        const objectSeatCell = row.querySelector('[data-field="objectSeat"]');
+
+        // Retrieve the actual FK IDs from the data-attributes for editing
+        const currentEventID = eventNameCell.dataset.eventId || '';
+        const currentIndividualID = individualNameCell.dataset.individualId || '';
+        const currentSeatingObjectID = seatingObjectNameCell.dataset.seatingObjectId || '';
+
+        // For placeholder: use number inputs for FK IDs
+        // In a full implementation, you'd use dropdowns for Event, Individual, and Seating Object IDs
+        eventNameCell.innerHTML = `<input type="number" value="${currentEventID}" name="eventID">`;
+        individualNameCell.innerHTML = `<input type="number" value="${currentIndividualID}" name="individualID">`;
+        seatingObjectNameCell.innerHTML = `<input type="number" value="${currentSeatingObjectID}" name="seating_objectID">`;
+        objectSeatCell.innerHTML = `<input type="text" value="${objectSeatCell.textContent}" name="objectSeat">`;
+
+        // Toggle button visibility
+        row.querySelector('.edit-btn').style.display = 'none';
+        row.querySelector('.save-btn').style.display = 'inline-block';
+        row.querySelector('.cancel-btn').style.display = 'inline-block';
+        row.querySelector('td:last-child button').style.display = 'none'; // Hide delete button
+    }
+
+    // --- Placeholder Save Functionality ---
+    async function saveRow(button, registrationID) {
+        const row = button.closest('tr');
+        // Get values from the input fields
+        const eventIDInput = row.querySelector('[name="eventID"]');
+        const individualIDInput = row.querySelector('[name="individualID"]');
+        const seatingObjectIDInput = row.querySelector('[name="seating_objectID"]');
+        const objectSeatInput = row.querySelector('[name="objectSeat"]');
+
+        // Placeholder alert
+        alert(`SAVE functionality not yet implemented for Registrations!\nAttempted to save:\nRegistration ID: ${registrationID}\nEvent ID: ${eventIDInput.value}\nIndividual ID: ${individualIDInput.value}\nSeating Object ID: ${seatingObjectIDInput.value}\nObject Seat: ${objectSeatInput.value}`);
+
+        // Revert to display mode immediately after alert for placeholder
+        if (originalRowContent[registrationID]) {
+            row.innerHTML = originalRowContent[registrationID];
+            delete originalRowContent[registrationID];
+        } else {
+            // Fallback: reload page if original content not found
+            window.location.reload();
+        }
+    }
+
+    function cancelEdit(button, registrationID) {
+        const row = button.closest('tr');
+        if (originalRowContent[registrationID]) {
+            row.innerHTML = originalRowContent[registrationID];
+            delete originalRowContent[registrationID];
+        } else {
+            window.location.reload(); // Fallback
+        }
+    }
+
+    // --- Placeholder Delete Functionality ---
+    function deleteRegistration(registrationID) {
+        if (confirm(`Are you sure you want to delete Registration ID: ${registrationID}?`)) {
+            alert(`DELETE functionality not yet implemented for Registrations!\nAttempted to delete: Registration ID ${registrationID}`);
+        }
+    }
+</script>

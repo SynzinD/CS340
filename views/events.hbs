@@ -1,34 +1,52 @@
-<h2>View Events</h2>
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
+<!-- 
+    Citation for the <script> block below
+    Date: 5/19/25
+    Adapted from AI:
+    Source URL: https://gemini.google.com/app
+    Code here was adapted from the code in individuals.hbs, which was partially generated from Gemini
+    Using the prompts described there. 
+-->
+
+
+<h2>View and Add Events</h2>
 <table>
     <thead>
         <tr>
             <th>Event ID</th>
             <th>Event Name</th>
             <th>Date/Time</th>
-            <th>Venue ID</th>
+            <th>Venue Name</th>
             <th>Seating Type</th>
             <th>Description</th>
-            <th>Capacity</th>
+            <th>Event Capacity</th>
             <th>Edit</th>
             <th>Delete</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="eventsTableBody">
         {{#each events}}
-        <tr>          
+        <tr data-id="{{this.eventID}}">
             <td>{{this.eventID}}</td>
-            <td>{{this.eventName}}</td>
-            <td>{{this.eventDateTime}}</td>
-            <td>{{this.venueID}}</td>
-            <td>{{this.seatingType}}</td>
-            <td>{{this.description}}</td>
-            <td>{{this.eventCapacity}}</td>
-            <td><a href="/events/edit/{{this.eventID}}">Edit</a></td>
+            <td data-field="eventName">{{this.eventName}}</td>
+            <td data-field="eventDateTime">{{this.eventDateTime}}</td>
+            <td data-field="venueName" data-venue-id="{{this.venueID}}">{{this.venueName}}</td>
+            <td data-field="eventCapacity">{{this.eventCapacity}}</td>
+            <td data-field="seatingType">{{this.seatingType}}</td>
+            <td data-field="Description">{{this.Description}}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, {{this.eventID}})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, {{this.eventID}})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, {{this.eventID}})">Cancel</button>
+            </td>
             <td><button onclick="deleteEvent({{this.eventID}})">Delete</button></td>
         </tr>
         {{/each}}
     </tbody>
 </table>
+
 <h3>Add New Event</h3>
     <form action="/events" method="POST">
         <label for="eventName">Event Name:</label><br>
@@ -38,9 +56,12 @@
         <input type="datetime-local" id="eventDateTime" name="eventDateTime"><br><br>
 
         <label for="venueID">Venue:</label><br>
-        <select id="venueID" name="venueID">
-            <option value="">Select Venue by Name (to be added)</option>
-        </select><br><br>
+    <select id="venueID" name="venueID">
+        <option value="">Select a Venue</option>
+        {{#each venues}}
+        <option value="{{this.venueID}}">{{this.venueName}}</option>
+        {{/each}}
+    </select><br><br>
 
         <label for="seatingType">Seating Type:</label><br>
         <input type="text" id="seatingType" name="seatingType"><br><br>
@@ -49,7 +70,138 @@
         <textarea id="description" name="description"></textarea><br><br>
 
         <label for="eventCapacity">Event Capacity:</label><br>
-        <input type="number" id="eventCapacity" name="eventCapacity"><br><br>
+        <input type="number" id="eventCapacity" name="eventCapacity" min="1" ><br><br>
 
         <input type="submit" value="Add Event">
 </form>
+
+
+<script>
+    let originalRowContent = {}; 
+
+    function editRow(button, eventID) {
+        const row = button.closest('tr');
+        originalRowContent[eventID] = row.innerHTML; 
+
+        const eventNameCell = row.querySelector('[data-field="eventName"]');
+        const eventDateTimeCell = row.querySelector('[data-field="eventDateTime"]');
+        const venueNameCell = row.querySelector('[data-field="venueName"]'); 
+        const eventCapacityCell = row.querySelector('[data-field="eventCapacity"]');
+        const seatingTypeCell = row.querySelector('[data-field="seatingType"]');
+        const DescriptionCell = row.querySelector('[data-field="Description"]');
+
+        // Retrieve the actual venueID 
+        const currentVenueID = venueNameCell.dataset.venueId || ''; 
+
+        eventNameCell.innerHTML = `<input type="text" value="${eventNameCell.textContent}" name="eventName" required>`;
+        eventDateTimeCell.innerHTML = `<input type="text" value="${eventDateTimeCell.textContent}" name="eventDateTime">`;
+
+        venueNameCell.innerHTML = `<input type="number" value="${currentVenueID}" name="venueID">`; 
+        eventCapacityCell.innerHTML = `<input type="number" value="${eventCapacityCell.textContent}" name="eventCapacity">`;
+        seatingTypeCell.innerHTML = `<input type="text" value="${seatingTypeCell.textContent}" name="seatingType">`;
+        DescriptionCell.innerHTML = `<input type="text" value="${DescriptionCell.textContent}" name="Description">`;
+
+
+        row.querySelector('.edit-btn').style.display = 'none';
+        row.querySelector('.save-btn').style.display = 'inline-block';
+        row.querySelector('.cancel-btn').style.display = 'inline-block';
+        row.querySelector('td:last-child button').style.display = 'none'; 
+    }
+
+    async function saveRow(button, eventID) {
+        const row = button.closest('tr');
+        const eventNameInput = row.querySelector('[name="eventName"]');
+        const eventDateTimeInput = row.querySelector('[name="eventDateTime"]');
+        const venueIDInput = row.querySelector('[name="venueID"]'); 
+        const eventCapacityInput = row.querySelector('[name="eventCapacity"]');
+        const seatingTypeInput = row.querySelector('[name="seatingType"]');
+        const DescriptionInput = row.querySelector('[name="Description"]');
+
+
+        if (!eventNameInput.value.trim()) {
+            alert('Event Name cannot be empty!');
+            eventNameInput.focus();
+            return;
+        }
+
+        // Parse optional numeric/date fields
+        let parsedVenueID = venueIDInput.value.trim() !== '' ? parseInt(venueIDInput.value) : null;
+        let parsedEventCapacity = eventCapacityInput.value.trim() !== '' ? parseInt(eventCapacityInput.value) : null;
+
+        if (parsedVenueID !== null && isNaN(parsedVenueID)) {
+            alert('Venue ID must be a valid number!');
+            venueIDInput.focus();
+            return;
+        }
+        if (parsedEventCapacity !== null && isNaN(parsedEventCapacity)) {
+            alert('Event Capacity must be a valid number!');
+            eventCapacityInput.focus();
+            return;
+        }
+
+        const updatedData = {
+            eventName: eventNameInput.value,
+            eventDateTime: eventDateTimeInput.value.trim() !== '' ? eventDateTimeInput.value : null,
+            venueID: parsedVenueID, // Send the ID
+            eventCapacity: parsedEventCapacity,
+            seatingType: seatingTypeInput.value,
+            Description: DescriptionInput.value
+        };
+
+        try {
+            const response = await fetch(`/events/edit/${eventID}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Update the row with new data
+                eventNameInput.parentNode.textContent = result.event.eventName;
+                eventDateTimeInput.parentNode.textContent = result.event.eventDateTime;
+  
+                const venueNameCell = row.querySelector('[data-field="venueName"]');
+                venueNameCell.textContent = result.event.venueName; 
+                venueNameCell.dataset.venueId = result.event.venueID; /
+
+                eventCapacityInput.parentNode.textContent = result.event.eventCapacity;
+                seatingTypeInput.parentNode.textContent = result.event.seatingType;
+                DescriptionInput.parentNode.textContent = result.event.Description;
+
+                row.querySelector('.edit-btn').style.display = 'inline-block';
+                row.querySelector('.save-btn').style.display = 'none';
+                row.querySelector('.cancel-btn').style.display = 'inline-block';
+                row.querySelector('td:last-child button').style.display = 'inline-block'; 
+
+                delete originalRowContent[eventID];
+                alert(result.message);
+            } else {
+                alert('Error: ' + (result.message || 'Unknown error.'));
+            }
+
+        } catch (error) {
+            console.error("Error saving event:", error);
+            alert('An unexpected error occurred while saving.');
+        }
+    }
+
+    function cancelEdit(button, eventID) {
+        const row = button.closest('tr');
+        if (originalRowContent[eventID]) {
+            row.innerHTML = originalRowContent[eventID];
+            delete originalRowContent[eventID];
+        } else {
+            window.location.reload(); 
+    }
+
+    // Placeholder for delete 
+    function deleteEvent(eventID) {
+        if (confirm(`Are you sure you want to delete Event ID: ${eventID}?`)) {
+            alert(`Deleting Event ID: ${eventID}. (Not yet implemented via AJAX)`);
+        }
+    }
+</script>

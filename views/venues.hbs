@@ -1,23 +1,39 @@
-<h2>View Event Venues</h2>
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
+<!-- 
+    Citation for the <script> block below
+    Date: 5/19/25
+    Adapted from AI:
+    Source URL: https://gemini.google.com/app
+    Code here was adapted from the code in individuals.hbs, which was partially generated from Gemini
+    Using the prompts described there. 
+-->
+
+<h2>View and Add Event Venues</h2>
 <table>
     <thead>
         <tr>
             <th>Venue ID</th>
             <th>Venue Name</th>
             <th>Location</th>
-            <th>Capacity</th>
+            <th>Venue Max. Capacity</th>
             <th>Edit</th>
             <th>Delete</th>
         </tr>
     </thead>
-    <tbody>
+
+    <tbody id="venuesTableBody">
         {{#each venues}}
-        <tr>
+        <tr data-id="{{this.venueID}}">
             <td>{{this.venueID}}</td>
-            <td>{{this.venueName}}</td>
-            <td>{{this.location}}</td>
-            <td>{{this.capacity}}</td>
-            <td><a href="/venues/edit/{{this.venueID}}">Edit</a></td>
+            <td data-field="venueName">{{this.venueName}}</td>
+            <td data-field="location">{{this.location}}</td> <td data-field="capacity">{{this.capacity}}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, {{this.venueID}})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, {{this.venueID}})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, {{this.venueID}})">Cancel</button>
+            </td>
             <td><button onclick="deleteVenue({{this.venueID}})">Delete</button></td>
         </tr>
         {{/each}}
@@ -33,7 +49,112 @@
         <input type="text" id="location" name="location"><br><br>
 
         <label for="capacity">Capacity:</label><br>
-        <input type="number" id="capacity" name="capacity"><br><br>
+        <input type="number" id="capacity" name="capacity" min="1" ><br><br>
 
         <input type="submit" value="Add Venue">
-</form>
+    </form>
+
+<script>
+    let originalRowContent = {}; 
+
+    function editRow(button, venueID) {
+        const row = button.closest('tr');
+        originalRowContent[venueID] = row.innerHTML; 
+
+        const venueNameCell = row.querySelector('[data-field="venueName"]');
+        const locationCell = row.querySelector('[data-field="location"]'); 
+        const capacityCell = row.querySelector('[data-field="capacity"]');
+
+        venueNameCell.innerHTML = `<input type="text" value="${venueNameCell.textContent}" name="venueName" required>`; 
+        locationCell.innerHTML = `<input type="text" value="${locationCell.textContent}" name="location">`; 
+        capacityCell.innerHTML = `<input type="number" value="${capacityCell.textContent}" name="capacity">`;
+
+        row.querySelector('.edit-btn').style.display = 'none';
+        row.querySelector('.save-btn').style.display = 'inline-block';
+        row.querySelector('.cancel-btn').style.display = 'inline-block';
+        row.querySelector('td:last-child button').style.display = 'none'; 
+    }
+
+    async function saveRow(button, venueID) {
+        const row = button.closest('tr');
+        const venueNameInput = row.querySelector('[name="venueName"]');
+        const locationInput = row.querySelector('[name="location"]'); 
+        const capacityInput = row.querySelector('[name="capacity"]');
+
+        if (!venueNameInput.value.trim()) {
+            alert('Venue Name cannot be empty!');
+            venueNameInput.focus();
+            return;
+        }
+
+        // Capacity is optional, but if entered, must be a valid number
+        let capacityValue = capacityInput.value.trim();
+        let parsedCapacity = null;
+        if (capacityValue !== '') {
+            parsedCapacity = parseInt(capacityValue);
+            if (isNaN(parsedCapacity)) {
+                alert('Capacity must be a valid number!');
+                capacityInput.focus();
+                return;
+            }
+        }
+
+        const updatedData = {
+            venueName: venueNameInput.value,
+            location: locationInput.value, 
+            capacity: parsedCapacity 
+        };
+
+        try {
+            const response = await fetch(`/venues/edit/${venueID}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Update the row
+                venueNameInput.parentNode.textContent = result.venue.venueName;
+                locationInput.parentNode.textContent = result.venue.location; 
+                capacityInput.parentNode.textContent = result.venue.capacity;
+
+                // Restore buttons
+                row.querySelector('.edit-btn').style.display = 'inline-block';
+                row.querySelector('.save-btn').style.display = 'none';
+                row.querySelector('.cancel-btn').style.display = 'inline-block';
+                row.querySelector('td:last-child button').style.display = 'inline-block'; 
+                delete originalRowContent[venueID];
+                alert(result.message);
+            } else {
+                alert('Error: ' + (result.message || 'Unknown error.'));
+            }
+
+        } catch (error) {
+            console.error("Error saving venue:", error);
+            alert('An unexpected error occurred while saving.');
+        }
+    }
+
+    function cancelEdit(button, venueID) {
+        const row = button.closest('tr');
+        if (originalRowContent[venueID]) {
+            row.innerHTML = originalRowContent[venueID];
+            delete originalRowContent[venueID];
+        } else {
+            window.location.reload(); 
+        }
+    }
+
+    // Placeholder
+    function deleteVenue(venueID) {
+        if (confirm(`Are you sure you want to delete Venue ID: ${venueID}?`)) {
+            alert(`Deleting Venue ID: ${venueID}. (Not yet implemented)`);
+        }
+    }
+</script>
+
+
