@@ -32,7 +32,7 @@ DELETE FROM individuals WHERE individualID = (SELECT individualID FROM individua
 Venues CRUD
 */
 
---Add a venue to the database using supplied values.
+-- Add a venue to the database using supplied values.
 INSERT INTO venues
   (`venueName`, `location`, `capacity`)
   VALUES
@@ -43,7 +43,7 @@ SELECT * FROM venues;
 -- Return the venueID when the name is supplied. will be used on the events page to convert dropdown value back of name back into venueID
 SELECT venueID FROM venues WHERE venueName LIKE @vNameSearch;
 -- Return the venueName where ID is supplied, used to display venueName instead of ID 
-SELECT venueName FROM venues WHERE venueID = @vVenueID
+SELECT venueName FROM venues WHERE venueID = @vVenueID;
 -- Update venues based on venueName vs. ID
 UPDATE venues
 SET venueName = @vNameUpdate, location = @vLocationUpdate, capacity = @vCapacityUpdate
@@ -74,10 +74,10 @@ SELECT
                 e.eventCapacity,
                 e.venueID /* Keep for edit functionality */
             FROM events e
-            JOIN venues v ON e.venueID = v.venueID
+            JOIN venues v ON e.venueID = v.venueID;
 
 -- populate the picklist for venues on the Events page
-SELECT venueID, venueName FROM venues
+SELECT venueID, venueName FROM venues;
 	
 -- Search for events based on the name. 
 SELECT * FROM events WHERE eventName LIKE @eNameSearch;
@@ -109,10 +109,10 @@ SELECT
                 so.objectCapacity,
                 so.eventID /* Keep for edit functionality */
             FROM seating_objects so
-            JOIN events e ON so.eventID = e.eventID
+            JOIN events e ON so.eventID = e.eventID;
 
 -- Used to Populate Events Picklist in Add Seating Object form
-SELECT eventID, eventName FROM events
+SELECT eventID, eventName FROM events;
 	
 -- Get a list of all the seating objects that are named the same thing over all events - possible search function
 SELECT * FROM seating_objects WHERE objectName LIKE @oNameSearch;
@@ -162,16 +162,16 @@ SELECT
 FROM event_registrations r
 JOIN events e ON r.eventID = e.eventID
 JOIN individuals i ON r.individualID = i.individualID
-JOIN seating_objects s ON r.seating_objectID = s.seating_objectID
+JOIN seating_objects s ON r.seating_objectID = s.seating_objectID;
 
 -- Used to populate the individual picklist on the add registration form
-SELECT individualID, firstName, lastName FROM individuals
+SELECT individualID, firstName, lastName FROM individuals;
 
 -- Used to populate the event picklist on the add registration form
-SELECT eventID, eventName FROM events
+SELECT eventID, eventName FROM events;
 
 -- Usesd to populate the seating object picklist on the add registration form
-SELECT seating_objectID, objectName FROM seating_objects
+SELECT seating_objectID, objectName FROM seating_objects;
 	
 -- Bring up an event_registration based on a supplied first and last name, for possible search functionality
 SELECT * FROM event_registrations WHERE (SELECT individualID from individuals WHERE firstName = @fNameSearch AND lastName = @lNameSearch);
@@ -189,5 +189,5 @@ SET individualID = ((SELECT individualID from individuals WHERE firstName = @fNa
 WHERE individualID = individualIDSelect AND eventID = (SELECT eventID from events WHERE eventName = @eNameSearch);
 -- Delete a given event registration where the first name, last name, and event registration are supplied.
 DELETE FROM event_registrations WHERE individualID = (SELECT individualID FROM individuals WHERE firstName = @fNameSelect AND lastName = @lNameSelect) AND eventID = (SELECT eventID from events WHERE eventName = @eNameSearch);
--- Delet from table
-DELETE FROM event_registrations WHERE registrationID = @registrationID
+-- Delete from table
+DELETE FROM event_registrations WHERE registrationID = @registrationID;
