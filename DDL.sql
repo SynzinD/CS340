@@ -1,18 +1,17 @@
-/*
-CS340 Group 47 Project Step 3 Draft
-Megan Mooers and Synzin Darkpaw 
-*/
 
--- PL/SQL to drop procedure 
-DROP PROCEDURE  IF EXISTS load_eventdb;
+DROP PROCEDURE IF EXISTS sp_ResetDatabase;
+
 DELIMITER //
-CREATE PROCEDURE load_eventdb()
-BEGIN
 
-	-- Create database and fill with test data
-	
-	SET foreign_key_checks = 0; 
-	DROP TABLE IF EXISTS individuals;
+-- Create the stored procedure named sp_ResetDatabase
+
+
+CREATE PROCEDURE sp_ResetDatabase()
+BEGIN
+    -- Disable foreign key checks to allow dropping tables in any order without errors
+    SET FOREIGN_KEY_CHECKS = 0;
+
+    DROP TABLE IF EXISTS individuals;
 	DROP TABLE IF EXISTS venues;
 	DROP TABLE IF EXISTS events;
 	DROP TABLE IF EXISTS seating_objects;
@@ -167,7 +166,7 @@ BEGIN
 
 	SET FOREIGN_KEY_CHECKS=1;
 
-END //
 
+END //
 
 DELIMITER ;

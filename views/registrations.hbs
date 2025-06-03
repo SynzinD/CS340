@@ -1,3 +1,21 @@
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
+<!-- 
+    Citation for the <script> block below
+    Date: 5/19/25
+    Adapted from AI:
+    Source URL: https://gemini.google.com/app
+    Code here was adapted from the code in individuals.hbs, which was partially generated from Gemini
+    Using the prompts described there. 
+-->
+
+<script>
+    const allIndividuals = {{{json individuals}}};
+    const allEvents = {{{json events}}};
+    const allSeatingObjects = {{{json seatingObjects}}};
+</script>
+
 <h2>View Registrations</h2>
 <table>
     <thead>
@@ -11,39 +29,319 @@
             <th>Delete</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="registrationsTableBody">
         {{#each registrations}}
-        <tr>
+        <tr data-id="{{this.registrationID}}">
             <td>{{this.registrationID}}</td>
-            <td>{{this.eventName}}</td>
-            <td>{{this.individualName}}</td>
-            <td>{{this.seatingObjectName}}</td>
-            <td>{{this.objectSeat}}</td>
-            <td><a href="/registrations/edit/{{this.registrationID}}">Edit</a></td>
-            <td><button onclick="deleteRegistration({{this.registrationID}})">Delete</button></td>
+            <td data-field="eventName" data-event-id="{{this.eventID}}">{{this.eventName}}</td>
+            <td data-field="individualName" data-individual-id="{{this.individualID}}">{{this.individualName}}</td>
+            <td data-field="seatingObjectName" data-seating-object-id="{{this.seating_objectID}}">{{this.seatingObjectName}}</td>
+            <td data-field="objectSeat">{{this.objectSeat}}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, {{this.registrationID}})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, {{this.registrationID}})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, {{this.registrationID}})">Cancel</button>
+            </td>
+            <td>
+                <button onclick="deleteRegistration({{this.registrationID}})">Delete</button>
+            </td>
         </tr>
         {{/each}}
     </tbody>
 </table>
+
 <h3>Add New Registration</h3>
-    <form action="/registrations" method="POST">
-        <label for="individualID">Individual:</label><br>
-        <select id="individualID" name="individualID">
-            <option value="">Select Individual by Name (to be added)</option>
-        </select><br><br>
+<form id="addRegistrationForm" onsubmit="addRegistration(event)">
+    <label for="addIndividualID">Individual:</label><br>
+    <select id="addIndividualID" name="individualID" required>
+        <option value="">Select an Individual</option>
+        {{#each individuals}}
+        <option value="{{this.individualID}}">{{this.firstName}} {{this.lastName}}</option>
+        {{/each}}
+    </select><br><br>
 
-        <label for="eventID">Event:</label><br>
-        <select id="eventID" name="eventID">
-            <option value="">Select Event by Name (to be added)</option>
-        </select><br><br>
+    <label for="addEventID">Event:</label><br>
+    <select id="addEventID" name="eventID" onchange="loadSeatingObjects(this.value, 'addSeatingObjectID')" required>
+        <option value="">Select an Event</option>
+        {{#each events}}
+        <option value="{{this.eventID}}">{{this.eventName}}</option>
+        {{/each}}
+    </select><br><br>
 
-        <label for="seating_objectID">Seating Object:</label><br>
-        <select id="seating_objectID" name="seating_objectID">
-            <option value="">Select Seating Object by Name (to be added)</option>
-        </select><br><br>
+    <label for="addSeatingObjectID">Seating Object:</label><br>
+    <select id="addSeatingObjectID" name="seating_objectID" required>
+        <option value="">Select an Event First</option>
+    </select><br><br>
 
-        <label for="objectSeat">Seat Number:</label><br>
-        <input type="number" id="objectSeat" name="objectSeat"><br><br>
+    <label for="addObjectSeat">Seat Number (optional):</label><br>
+    <input type="number" id="addObjectSeat" name="objectSeat" min="1"><br><br>
 
-        <input type="submit" value="Add Registration">
+    <input type="submit" value="Add Registration">
 </form>
+
+<script>
+    let originalRowContent = {}; 
+
+    // Seating Objects Picklist
+    async function loadSeatingObjects(eventID, targetDropdownId) {
+        const seatingObjectDropdown = document.getElementById(targetDropdownId);
+        seatingObjectDropdown.innerHTML = '<option value="">Loading Seating Objects...</option>';
+
+        if (eventID) {
+            try {
+                const response = await fetch(`/api/events/${eventID}/seating-objects`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const seatingObjects = await response.json();
+
+                seatingObjectDropdown.innerHTML = '<option value="">Select a Seating Object</option>';
+                seatingObjects.forEach(so => {
+                    const option = document.createElement('option');
+                    option.value = so.seating_objectID;
+                    option.textContent = so.objectName;
+                    seatingObjectDropdown.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Could not fetch seating objects:", error);
+                seatingObjectDropdown.innerHTML = '<option value="">Error loading Seating Objects</option>';
+            }
+        } else {
+            seatingObjectDropdown.innerHTML = '<option value="">Select an Event First</option>';
+        }
+    }
+
+    // Create new row in table
+    function createRegistrationRow(registration) {
+        const tableBody = document.getElementById('registrationsTableBody');
+        const newRow = document.createElement('tr');
+        newRow.setAttribute('data-id', registration.registrationID);
+        newRow.innerHTML = `
+            <td>${registration.registrationID}</td>
+            <td data-field="eventName" data-event-id="${registration.eventID}">${registration.eventName}</td>
+            <td data-field="individualName" data-individual-id="${registration.individualID}">${registration.individualName}</td>
+            <td data-field="seatingObjectName" data-seating-object-id="${registration.seating_objectID}">${registration.seatingObjectName}</td>
+            <td data-field="objectSeat">${registration.objectSeat !== null ? registration.objectSeat : ''}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, ${registration.registrationID})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, ${registration.registrationID})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, ${registration.registrationID})">Cancel</button>
+            </td>
+            <td>
+                <button onclick="deleteRegistration(${registration.registrationID})">Delete</button>
+            </td>
+        `;
+        tableBody.appendChild(newRow);
+    }
+
+    // Add Registration
+    async function addRegistration(event) {
+        event.preventDefault(); 
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // Convert empty strings to null
+        data.individualID = data.individualID.trim() !== '' ? parseInt(data.individualID) : null;
+        data.eventID = data.eventID.trim() !== '' ? parseInt(data.eventID) : null;
+        data.seating_objectID = data.seating_objectID.trim() !== '' ? parseInt(data.seating_objectID) : null;
+        data.objectSeat = data.objectSeat.trim() !== '' ? parseInt(data.objectSeat) : null;
+
+        if (isNaN(data.individualID) || isNaN(data.eventID) || isNaN(data.seating_objectID)) {
+            alert('Please select an Individual, Event, and Seating Object.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/registrations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                createRegistrationRow(result.registration); 
+                form.reset(); // Clear the form fields
+                document.getElementById('addSeatingObjectID').innerHTML = '<option value="">Select an Event First</option>'; 
+                alert(result.message);
+            } else {
+                alert('Error adding registration: ' + (result.message || 'Unknown error.'));
+            }
+        } catch (error) {
+            console.error("Error adding registration:", error);
+            alert('An unexpected error occurred while adding registration.');
+        }
+    }
+
+
+    // EDIT ROW INLINE
+    function editRow(button, registrationID) {
+        const row = button.closest('tr');
+        originalRowContent[registrationID] = row.innerHTML; 
+
+        const eventNameCell = row.querySelector('[data-field="eventName"]');
+        const individualNameCell = row.querySelector('[data-field="individualName"]');
+        const seatingObjectNameCell = row.querySelector('[data-field="seatingObjectName"]');
+        const objectSeatCell = row.querySelector('[data-field="objectSeat"]');
+
+        const currentEventID = parseInt(eventNameCell.dataset.eventId);
+        const currentIndividualID = parseInt(individualNameCell.dataset.individualId);
+        const currentSeatingObjectID = parseInt(seatingObjectNameCell.dataset.seatingObjectId);
+
+        // Individuals Dropdown
+        let individualSelectHtml = `<select name="individualID" required>`;
+        individualSelectHtml += `<option value="">Select an Individual</option>`;
+        allIndividuals.forEach(individual => {
+            const selected = (individual.individualID === currentIndividualID) ? 'selected' : '';
+            individualSelectHtml += `<option value="${individual.individualID}" ${selected}>${individual.firstName} ${individual.lastName}</option>`;
+        });
+        individualSelectHtml += `</select>`;
+        individualNameCell.innerHTML = individualSelectHtml;
+
+        // Events Dropdown
+        let eventSelectHtml = `<select name="eventID" onchange="loadSeatingObjects(this.value, 'editSeatingObjectID_${registrationID}')" required>`;
+        eventSelectHtml += `<option value="">Select an Event</option>`;
+        allEvents.forEach(event => {
+            const selected = (event.eventID === currentEventID) ? 'selected' : '';
+            eventSelectHtml += `<option value="${event.eventID}" ${selected}>${event.eventName}</option>`;
+        });
+        eventSelectHtml += `</select>`;
+        eventNameCell.innerHTML = eventSelectHtml;
+
+        // Seating Object Dropdown 
+        seatingObjectNameCell.innerHTML = `<select id="editSeatingObjectID_${registrationID}" name="seating_objectID" required><option value="">Loading Seating Objects...</option></select>`;
+        
+        // Populate seating objects based on currentEventID
+        if (currentEventID) {
+            loadSeatingObjects(currentEventID, `editSeatingObjectID_${registrationID}`).then(() => {
+                // After loading, set the current seating object if it exists
+                const editSeatingDropdown = document.getElementById(`editSeatingObjectID_${registrationID}`);
+                if (editSeatingDropdown && currentSeatingObjectID) {
+                    editSeatingDropdown.value = currentSeatingObjectID;
+                }
+            });
+        } else {
+             // If no event selected, reset 
+            document.getElementById(`editSeatingObjectID_${registrationID}`).innerHTML = '<option value="">Select an Event First</option>';
+        }
+
+        // Seat Number
+        objectSeatCell.innerHTML = `<input type="number" value="${objectSeatCell.textContent}" name="objectSeat" min="1">`;
+
+        // Toggle buttons
+        row.querySelector('.edit-btn').style.display = 'none';
+        row.querySelector('.save-btn').style.display = 'inline-block';
+        row.querySelector('.cancel-btn').style.display = 'inline-block';
+        row.querySelector('td:last-child button').style.display = 'none'; 
+    }
+
+
+    // SAVE ROW INLINE
+    async function saveRow(button, registrationID) {
+        const row = button.closest('tr');
+        // Get values
+        const individualIDSelect = row.querySelector('[name="individualID"]');
+        const eventIDSelect = row.querySelector('[name="eventID"]');
+        const seatingObjectIDSelect = row.querySelector('[name="seating_objectID"]');
+        const objectSeatInput = row.querySelector('[name="objectSeat"]');
+
+        const updatedData = {
+            individualID: parseInt(individualIDSelect.value),
+            eventID: parseInt(eventIDSelect.value),
+            seating_objectID: parseInt(seatingObjectIDSelect.value),
+            objectSeat: objectSeatInput.value.trim() !== '' ? parseInt(objectSeatInput.value) : null
+        };
+
+        if (isNaN(updatedData.individualID) || isNaN(updatedData.eventID) || isNaN(updatedData.seating_objectID)) {
+            alert('Please select an Individual, Event, and Seating Object.');
+            return;
+        }
+        if (updatedData.objectSeat !== null && isNaN(updatedData.objectSeat)) {
+            alert('Seat Number must be a valid number or left blank.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/registrations/edit/${registrationID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Update the row with new data
+                row.querySelector('[data-field="eventName"]').textContent = result.registration.eventName;
+                row.querySelector('[data-field="eventName"]').dataset.eventId = result.registration.eventID; 
+                row.querySelector('[data-field="individualName"]').textContent = result.registration.individualName;
+                row.querySelector('[data-field="individualName"]').dataset.individualId = result.registration.individualID; 
+                row.querySelector('[data-field="seatingObjectName"]').textContent = result.registration.seatingObjectName;
+                row.querySelector('[data-field="seatingObjectName"]').dataset.seatingObjectId = result.registration.seating_objectID; 
+                row.querySelector('[data-field="objectSeat"]').textContent = result.registration.objectSeat !== null ? result.registration.objectSeat : '';
+
+                // Toggle buttons
+                row.querySelector('.edit-btn').style.display = 'inline-block';
+                row.querySelector('.save-btn').style.display = 'none';
+                row.querySelector('.cancel-btn').style.display = 'none';
+                row.querySelector('td:last-child button').style.display = 'inline-block';
+
+                delete originalRowContent[registrationID]; 
+                alert(result.message);
+            } else {
+                alert('Error updating registration: ' + (result.message || 'Unknown error.'));
+            }
+
+        } catch (error) {
+            console.error("Error saving registration:", error);
+            alert('An unexpected error occurred while saving.');
+        }
+    }
+
+    // CANCEL EDIT
+    function cancelEdit(button, registrationID) {
+        const row = button.closest('tr');
+        if (originalRowContent[registrationID]) {
+            row.innerHTML = originalRowContent[registrationID];
+            delete originalRowContent[registrationID];
+        } else {
+            window.location.reload(); 
+        }
+    }
+
+    // DELETE REGISTRATION
+    async function deleteRegistration(registrationID) {
+        if (confirm(`Are you sure you want to delete Registration ID: ${registrationID}? This action cannot be undone.`)) {
+            try {
+                const response = await fetch(`/registrations/${registrationID}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const rowToRemove = document.querySelector(`tr[data-id="${registrationID}"]`);
+                    if (rowToRemove) {
+                        rowToRemove.remove(); 
+                    }
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to delete registration.'));
+                }
+            } catch (error) {
+                console.error("Error deleting registration:", error);
+                alert('An unexpected error occurred during deletion.');
+            }
+        }
+    }
+</script>

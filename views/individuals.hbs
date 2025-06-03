@@ -1,4 +1,18 @@
-<h2>View Individual Attendees</h2>
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
+<!-- 
+    Citation for the <script> block below
+    Date: 5/19/25
+    Adapted from AI:
+    Source URL: https://gemini.google.com/app
+    Gemini was prompted with the table structure below, and asked to help implement 
+    In-place editing calling the stored procedure sp_updateIndividual, which was also included in the prompt. 
+    The SaveRow and Cancel functions below is closely adapted from the output produced by Gemini, while 
+    EditRow and DeleteIndividual are adapted from the other two.
+-->
+
+<h2>View and Add Individual Attendees</h2>
 <table>
     <thead>
         <tr>
@@ -12,13 +26,17 @@
     </thead>
     <tbody>
         {{#each individuals}}
-        <tr>
+        <tr data-id="{{this.individualID}}">
             <td>{{this.individualID}}</td>
-            <td>{{this.firstName}}</td>
-            <td>{{this.lastName}}</td>
-            <td>{{this.email}}</td>
-            <td><a href="/individuals/edit/{{this.individualID}}">Edit</a></td>
-            <td><button onclick="deleteIndividual({{this.individualID}})">Delete</button></td>
+            <td data-field="firstName">{{this.firstName}}</td>
+            <td data-field="lastName">{{this.lastName}}</td>
+            <td data-field="email">{{this.email}}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, {{this.individualID}})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, {{this.individualID}})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, {{this.individualID}})">Cancel</button>
+            </td>
+            <td><button onclick="deleteIndividual('{{this.firstName}}','{{this.lastName}}',{{this.individualID}})">Delete</button></td>
         </tr>
         {{/each}}
     </tbody>
@@ -34,3 +52,130 @@
     <input type="email" id="email" name="email"><br><br>
     <input type="submit" value="Add Individual">
 </form>
+
+
+<script>
+    // Store original row content for easy cancellation without full page reload
+    let originalRowContent = {};
+
+    function editRow(button, individualID) {
+        const row = button.closest('tr');
+        originalRowContent[individualID] = row.innerHTML; // Store original HTML
+
+        // Get the data fields in the row
+        const firstNameCell = row.querySelector('[data-field="firstName"]');
+        const lastNameCell = row.querySelector('[data-field="lastName"]');
+        const emailCell = row.querySelector('[data-field="email"]');
+
+        // Replace text with input fields
+        firstNameCell.innerHTML = `<input type="text" value="${firstNameCell.textContent}" name="firstName">`;
+        lastNameCell.innerHTML = `<input type="text" value="${lastNameCell.textContent}" name="lastName" required>`;
+        emailCell.innerHTML = `<input type="email" value="${emailCell.textContent}" name="email">`;
+
+        // Hide Edit button, show Save and Cancel
+        row.querySelector('.edit-btn').style.display = 'none';
+        row.querySelector('.save-btn').style.display = 'inline-block';
+        row.querySelector('.cancel-btn').style.display = 'inline-block';
+        // Hide delete button while editing
+        row.querySelector('td:last-child button').style.display = 'none';
+    }
+
+    async function saveRow(button, individualID) {
+        const row = button.closest('tr');
+        const firstNameInput = row.querySelector('[name="firstName"]');
+        const lastNameInput = row.querySelector('[name="lastName"]');
+        const emailInput = row.querySelector('[name="email"]');
+
+        // validation
+        if (!lastNameInput.value.trim()) {
+            alert('Last Name cannot be empty!');
+            lastNameInput.focus();
+            return;
+        }
+
+        const updatedData = {
+            firstName: firstNameInput.value,
+            lastName: lastNameInput.value,
+            email: emailInput.value
+        };
+
+        try {
+            const response = await fetch(`/individuals/edit/${individualID}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify(updatedData) // Convert JS object to JSON string
+            });
+
+            const result = await response.json(); // Parse the JSON response
+
+            if (result.success) {
+                // Update the row with new data 
+                firstNameInput.parentNode.textContent = result.individual.firstName;
+                lastNameInput.parentNode.textContent = result.individual.lastName;
+                emailInput.parentNode.textContent = result.individual.email;
+
+                // Restore buttons
+                row.querySelector('.edit-btn').style.display = 'inline-block';
+                row.querySelector('.save-btn').style.display = 'none';
+                row.querySelector('.cancel-btn').style.display = 'none';
+                row.querySelector('td:last-child button').style.display = 'inline-block'; // Show delete button
+
+                // Clear original content for this row
+                delete originalRowContent[individualID];
+
+
+            } else {
+                alert('Error: ' + result.message); // Display server-side error
+            }
+
+        } catch (error) {
+            console.error("Error saving individual:", error);
+            alert('An unexpected error occurred while saving.');
+        }
+    }
+
+    function cancelEdit(button, individualID) {
+        const row = button.closest('tr');
+        if (originalRowContent[individualID]) {
+            row.innerHTML = originalRowContent[individualID]; // Restore original data
+            delete originalRowContent[individualID]; 
+        } else {
+            // Fallback: If original content not stored, refresh the page to get fresh data
+            window.location.reload();
+        }
+    }
+
+
+    // DELETE INDIVIDUAL
+    async function deleteIndividual(firstName, lastName, individualID) {
+        if (confirm(`Are you sure you want to delete ${firstName} ${lastName}?`)) {
+            try {
+                const response = await fetch(`/individuals/${individualID}`, {
+                    method: 'DELETE', 
+                    headers: {
+                        'Content-Type': 'application/json' 
+                    }
+                });
+
+                const result = await response.json(); 
+
+                if (response.ok && result.success) { 
+                    alert(result.message); 
+                    // Remove row 
+                    const rowToRemove = document.querySelector(`tr[data-id="${individualID}"]`);
+                    if (rowToRemove) {
+                        rowToRemove.remove();
+                    }
+                } else {
+                    // Handle fail
+                    alert('Error deleting individual: ' + (result.message || 'Unknown error.'));
+                }
+            } catch (error) {
+                console.error("Network or unexpected error during deletion:", error);
+                alert('An unexpected error occurred while attempting to delete.');
+            }
+        }
+    }
+</script>

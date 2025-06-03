@@ -1,3 +1,15 @@
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
+<!--
+Citation for the following style block: 
+Date: 5/10/2022
+Adapted from AI:
+Source URL: https://gemini.google.com/app
+Prompt: AI was given A list of our tables and handlebars templates.
+It was asked to help format a horizontal navigation bar displaying links to all of these pages. 
+-->
+
 </html>
 <!DOCTYPE html>
 <html lang="en">
@@ -5,7 +17,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
-    <style>
+     <style>
         nav {
             background-color: #f0f0f0;
             padding: 10px 0;
@@ -72,16 +84,23 @@
         tbody tr:hover {
             background-color: #e0e0e0;
         }
+
+        /* Specific styling for the individualID column */
+        th:nth-child(1), /* Target the first table header (Individual ID) */
+        td:nth-child(1)   /* Target the first table data cell in each row */
+        {
+            width: 80px; /* Adjust this value as needed */
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Group 47 Megan Mooers and Synzin Darkpaw</h1>
         <h1>Nonprofit Event Management System</h1>
     </header>
 
     <nav>
         <ul>
+            <li><a href="/">Home</a></li>
             <li><a href="/individuals">Individual Attendees</a></li>
             <li><a href="/venues">Venues</a></li>
             <li><a href="/events">Events</a></li>
@@ -95,7 +114,22 @@
     </div>
 
     <footer>
-        <p></p>
+        <form id="resetDbForm" action="/reset-database" method="POST" style="display:inline;">
+            <input type="hidden" name="redirectUrl" id="resetRedirectUrl" value="/">
+            <button type="submit" style="background-color: #dc4405; color: #000000; padding: 5px 10px; border: groove; cursor: pointer; border-radius: 4px;">Reset Database</button>
+        </form>
+        <p>&copy; 2025 Megan Mooers and Synzin Darkpaw</p> 
+        <p>Oregon State University, CS340, Spring 2025, Group 47</p>
+        <script>
+        // Set the value of the hidden input to the current path when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const resetRedirectUrlInput = document.getElementById('resetRedirectUrl');
+            if (resetRedirectUrlInput) {
+                resetRedirectUrlInput.value = window.location.pathname;
+            }
+        });
+        </script>
+
     </footer>
 </body>
 </html>

@@ -1,40 +1,275 @@
-<h2>View Seating Objects</h2>
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
+<!-- 
+    Citation for the <script> block below
+    Date: 5/19/25
+    Adapted from AI:
+    Source URL: https://gemini.google.com/app
+    Code here was adapted from the code in individuals.hbs, which was partially generated from Gemini
+    Using the prompts described there. 
+
+-->
+
+<script>
+    const allEvents = {{{json events}}}; 
+</script>
+
+<h2>View and Add Custom Seating Objects</h2>
+
 <table>
     <thead>
         <tr>
             <th>Seating Object ID</th>
-            <th>Event ID</th>
+            <th>Event Name</th>
             <th>Object Name</th>
-            <th>Object Capacity</th>
+            <th>Seating Capacity</th>
             <th>Edit</th>
             <th>Delete</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="seatingObjectsTableBody">
         {{#each seatingobjects}}
-        <tr>          
+        <tr data-id="{{this.seating_objectID}}">
             <td>{{this.seating_objectID}}</td>
-            <td>{{this.eventID}}</td>
-            <td>{{this.objectName}}</td>
-            <td>{{this.objectCapacity}}</td>
-            <td><a href="/events/edit/{{this.seating_objectID}}">Edit</a></td>
-            <td><button onclick="deleteEvent({{this.seating_objectID}})">Delete</button></td>
+            <td data-field="eventName" data-event-id="{{this.eventID}}">{{this.eventName}}</td>
+            <td data-field="objectName">{{this.objectName}}</td>
+            <td data-field="objectCapacity">{{this.objectCapacity}}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, {{this.seating_objectID}})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, {{this.seating_objectID}})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, {{this.seating_objectID}})">Cancel</button>
+            </td>
+            <td>
+                <button onclick="deleteSeatingObject({{this.seating_objectID}})">Delete</button>
+            </td>
         </tr>
         {{/each}}
     </tbody>
 </table>
+
 <h3>Add New Seating Object</h3>
-<form action="/seating-objects" method="POST">
-        <label for="eventID">Event:</label><br>
-        <select id="eventID" name="eventID">
-            <option value="">Select Event by Name (to be added)</option>
-        </select><br><br>
+<form id="addSeatingObjectForm" onsubmit="addSeatingObject(event)">
+    <label for="addEventID">Event:</label><br>
+    <select id="addEventID" name="eventID" required>
+        <option value="">Select an Event</option>
+        {{#each events}}
+        <option value="{{this.eventID}}">{{this.eventName}}</option>
+        {{/each}}
+    </select><br><br>
 
-        <label for="objectName">Object Name:</label><br>
-        <input type="text" id="objectName" name="objectName" required><br><br>
+    <label for="addObjectName">Object Name:</label><br>
+    <input type="text" id="addObjectName" name="objectName" required><br><br>
 
-        <label for="objectCapacity">Object Capacity:</label><br>
-        <input type="number" id="objectCapacity" name="objectCapacity"><br><br>
+    <label for="addObjectCapacity">Seating Capacity (optional):</label><br>
+    <input type="number" id="addObjectCapacity" name="objectCapacity" min="0"><br><br>
 
-        <input type="submit" value="Add Seating Object">
+    <input type="submit" value="Add Seating Object">
 </form>
+
+<script>
+    let originalRowContent = {}; 
+
+    // ADD NEW TABLE ROW
+    function createSeatingObjectRow(seatingObject) {
+        const tableBody = document.getElementById('seatingObjectsTableBody');
+        const newRow = document.createElement('tr');
+        newRow.setAttribute('data-id', seatingObject.seating_objectID);
+        newRow.innerHTML = `
+            <td>${seatingObject.seating_objectID}</td>
+            <td data-field="eventName" data-event-id="${seatingObject.eventID}">${seatingObject.eventName}</td>
+            <td data-field="objectName">${seatingObject.objectName}</td>
+            <td data-field="objectCapacity">${seatingObject.objectCapacity !== null ? seatingObject.objectCapacity : ''}</td>
+            <td class="actions-cell">
+                <button class="edit-btn" onclick="editRow(this, ${seatingObject.seating_objectID})">Edit</button>
+                <button class="save-btn" style="display:none;" onclick="saveRow(this, ${seatingObject.seating_objectID})">Save</button>
+                <button class="cancel-btn" style="display:none;" onclick="cancelEdit(this, ${seatingObject.seating_objectID})">Cancel</button>
+            </td>
+            <td>
+                <button onclick="deleteSeatingObject(${seatingObject.seating_objectID})">Delete</button>
+            </td>
+        `;
+        tableBody.appendChild(newRow);
+    }
+
+    // ADD NEW SEATING OBJECT
+    async function addSeatingObject(event) {
+        event.preventDefault(); 
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // Convert empty strings to null 
+        data.eventID = data.eventID.trim() !== '' ? parseInt(data.eventID) : null;
+        data.objectCapacity = data.objectCapacity.trim() !== '' ? parseInt(data.objectCapacity) : null;
+
+        if (isNaN(data.eventID) || !data.objectName || data.objectName.trim() === '') {
+            alert('Please select an Event and provide an Object Name.');
+            return;
+        }
+        if (data.objectCapacity !== null && isNaN(data.objectCapacity)) {
+            alert('Object Capacity must be a valid number or left blank.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/seating-objects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                createSeatingObjectRow(result.seatingObject); 
+                form.reset(); 
+                alert(result.message);
+            } else {
+                alert('Error adding seating object: ' + (result.message || 'Unknown error.'));
+            }
+        } catch (error) {
+            console.error("Error adding seating object:", error);
+            alert('An unexpected error occurred while adding seating object.');
+        }
+    }
+
+
+    // EDIT ROW INLINE
+    function editRow(button, seatingObjectID) {
+        const row = button.closest('tr');
+        originalRowContent[seatingObjectID] = row.innerHTML; 
+
+        // Get current IDs
+        const eventNameCell = row.querySelector('[data-field="eventName"]');
+        const objectNameCell = row.querySelector('[data-field="objectName"]');
+        const objectCapacityCell = row.querySelector('[data-field="objectCapacity"]');
+
+        const currentEventID = parseInt(eventNameCell.dataset.eventId);
+
+        // Event Dropdown
+        let eventSelectHtml = `<select name="eventID" required>`;
+        eventSelectHtml += `<option value="">Select an Event</option>`;
+        allEvents.forEach(event => {
+            const selected = (event.eventID === currentEventID) ? 'selected' : '';
+            eventSelectHtml += `<option value="${event.eventID}" ${selected}>${event.eventName}</option>`;
+        });
+        eventSelectHtml += `</select>`;
+        eventNameCell.innerHTML = eventSelectHtml;
+
+        // Object Name Input
+        objectNameCell.innerHTML = `<input type="text" value="${objectNameCell.textContent}" name="objectName" required>`;
+
+        // Seating Capacity Input
+        objectCapacityCell.innerHTML = `<input type="number" value="${objectCapacityCell.textContent}" name="objectCapacity" min="0">`;
+
+        // Toggle buttons 
+        row.querySelector('.edit-btn').style.display = 'none';
+        row.querySelector('.save-btn').style.display = 'inline-block';
+        row.querySelector('.cancel-btn').style.display = 'inline-block';
+        row.querySelector('td:last-child button').style.display = 'none'; 
+    }
+
+
+    // SAVE ROW INLINE
+    async function saveRow(button, seatingObjectID) {
+        const row = button.closest('tr');
+        // Get values from the input/select fields
+        const eventIDSelect = row.querySelector('[name="eventID"]');
+        const objectNameInput = row.querySelector('[name="objectName"]');
+        const objectCapacityInput = row.querySelector('[name="objectCapacity"]');
+
+        const updatedData = {
+            eventID: parseInt(eventIDSelect.value),
+            objectName: objectNameInput.value.trim(),
+            objectCapacity: objectCapacityInput.value.trim() !== '' ? parseInt(objectCapacityInput.value) : null
+        };
+
+        if (isNaN(updatedData.eventID) || !updatedData.objectName) {
+            alert('Please select an Event and provide an Object Name.');
+            return;
+        }
+        if (updatedData.objectCapacity !== null && isNaN(updatedData.objectCapacity)) {
+            alert('Object Capacity must be a valid number or left blank.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/seating-objects/edit/${seatingObjectID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Update the row with new data 
+                row.querySelector('[data-field="eventName"]').textContent = result.seatingObject.eventName;
+                row.querySelector('[data-field="eventName"]').dataset.eventId = result.seatingObject.eventID; 
+                row.querySelector('[data-field="objectName"]').textContent = result.seatingObject.objectName;
+                row.querySelector('[data-field="objectCapacity"]').textContent = result.seatingObject.objectCapacity !== null ? result.seatingObject.objectCapacity : '';
+
+                // Toggle buttons
+                row.querySelector('.edit-btn').style.display = 'inline-block';
+                row.querySelector('.save-btn').style.display = 'none';
+                row.querySelector('.cancel-btn').style.display = 'none';
+                row.querySelector('td:last-child button').style.display = 'inline-block';
+
+                delete originalRowContent[seatingObjectID]; 
+                alert(result.message);
+            } else {
+                alert('Error updating seating object: ' + (result.message || 'Unknown error.'));
+            }
+
+        } catch (error) {
+            console.error("Error saving seating object:", error);
+            alert('An unexpected error occurred while saving.');
+        }
+    }
+
+    // CANCEL EDIT
+    function cancelEdit(button, seatingObjectID) {
+        const row = button.closest('tr');
+        if (originalRowContent[seatingObjectID]) {
+            row.innerHTML = originalRowContent[seatingObjectID];
+            delete originalRowContent[seatingObjectID];
+        } else {
+            window.location.reload(); 
+        }
+    }
+
+    // DELETE SEATING-OBJECT
+    async function deleteSeatingObject(seatingObjectID) {
+        if (confirm(`Are you sure you want to delete Seating Object ID: ${seatingObjectID}? This action cannot be undone and may affect associated registrations.`)) {
+            try {
+                const response = await fetch(`/seating-objects/${seatingObjectID}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const rowToRemove = document.querySelector(`tr[data-id="${seatingObjectID}"]`);
+                    if (rowToRemove) {
+                        rowToRemove.remove(); 
+                    }
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to delete seating object.'));
+                }
+            } catch (error) {
+                console.error("Error deleting seating object:", error);
+                alert('An unexpected error occurred during deletion.');
+            }
+        }
+    }
+</script>

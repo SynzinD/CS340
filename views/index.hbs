@@ -1,3 +1,6 @@
+<!--OSU340 Spring 2025 Group 47
+    Megan Mooers and Synzin Darkpaw-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +9,12 @@
     <title>{{title}}</title>
 </head>
 <body>
-
+    <p>This event management system is intended to provide event organizers with the freedom to set up any type of event they may need to host. They will be able to keep track of their venues and attendees, and customize seating as appropriate.</p>
     <ul>
         {{#each links}}
-        <li><a href="{{this.url}}">{{this.title}}</a></li>
+        <li><a href="{{this.url}}">{{this.title}}</a>
+        <p>{{this.description}}</p>
+        </li>
         {{/each}}
     </ul>
 </body>
